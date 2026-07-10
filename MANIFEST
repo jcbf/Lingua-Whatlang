@@ -1,0 +1,6 @@
+Cargo.toml
+Makefile.PL
+MANIFEST
+lib/Lingua/Whatlang.pm
+src/lib.rs
+t/basic.t
