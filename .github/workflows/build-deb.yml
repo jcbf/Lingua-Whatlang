@@ -1,0 +1,72 @@
+name: Build Ubuntu Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-deb:
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ["22.04", "24.04", "26.04"]
+    runs-on: self-hosted
+    container:
+      image: ubuntu:${{ matrix.ubuntu }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential curl ca-certificates git \
+            perl dpkg-dev libperl-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Build and test
+        run: |
+          perl Makefile.PL INSTALLDIRS=vendor
+          make
+          make test
+
+      - name: Package .deb
+        run: |
+          set -e
+          VERSION=$(perl -ne '/our \$VERSION = .([\d.]+)./ && print $1' lib/Lingua/Whatlang.pm)
+          ARCH=$(dpkg --print-architecture)
+          PKGROOT="$PWD/pkgroot"
+
+          make install DESTDIR="$PKGROOT"
+          mkdir -p "$PKGROOT/DEBIAN"
+
+          SIZE=$(du -sk "$PKGROOT" --exclude=DEBIAN | cut -f1)
+          cat > "$PKGROOT/DEBIAN/control" <<EOF
+          Package: liblingua-whatlang-perl
+          Version: ${VERSION}-ubuntu${{ matrix.ubuntu }}
+          Section: perl
+          Priority: optional
+          Architecture: ${ARCH}
+          Installed-Size: ${SIZE}
+          Depends: perl, libc6
+          Maintainer: jose.ferreira@anubisnetworks.com
+          Description: Fast natural language detection for Perl (Rust FFI backend)
+           Blazingly fast, lightweight language detection library for Perl,
+           providing FFI bindings to the Rust whatlang engine.
+          EOF
+
+          dpkg-deb --root-owner-group --build "$PKGROOT" \
+            "liblingua-whatlang-perl_${VERSION}_ubuntu${{ matrix.ubuntu }}_${ARCH}.deb"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-ubuntu-${{ matrix.ubuntu }}
+          path: '*.deb'
