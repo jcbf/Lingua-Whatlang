@@ -24,7 +24,7 @@ jobs:
           build-essential curl ca-certificates git libffi-dev
 
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up Perl
       uses: shogo82148/actions-setup-perl@v1
