@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         ubuntu: ["22.04", "24.04", "26.04"]
-    runs-on: [self-hosted, ubuntu-${{ matrix.ubuntu }}]
+    runs-on: ${{ fromJSON(format('["self-hosted", "ubuntu-{0}"]', matrix.ubuntu)) }}
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
