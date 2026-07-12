@@ -1,0 +1,60 @@
+services:
+  runner-22-04:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.github-runner-22.04
+    image: lingua-whatlang-github-runner:ubuntu-22.04
+    restart: unless-stopped
+    environment:
+      ACCESS_TOKEN: "${GH_ACCESS_TOKEN}"
+      REPO_URL: "https://github.com/jcbf/Lingua-Whatlang"
+      RUNNER_NAME: "lingua-whatlang-ubuntu-22.04"
+      RUNNER_WORKDIR: "/tmp/runner/work-22.04"
+      LABELS: "self-hosted,linux,x64,ubuntu-22.04"
+      RUNNER_GROUP: "Default"
+      EPHEMERAL: "false"
+    volumes:
+      - runner_work:/tmp/runner
+    security_opt:
+      - no-new-privileges:true
+
+  runner-24-04:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.github-runner-24.04
+    image: lingua-whatlang-github-runner:ubuntu-24.04
+    restart: unless-stopped
+    environment:
+      ACCESS_TOKEN: "${GH_ACCESS_TOKEN}"
+      REPO_URL: "https://github.com/jcbf/Lingua-Whatlang"
+      RUNNER_NAME: "lingua-whatlang-ubuntu-24.04"
+      RUNNER_WORKDIR: "/tmp/runner/work-24.04"
+      LABELS: "self-hosted,linux,x64,ubuntu-24.04"
+      RUNNER_GROUP: "Default"
+      EPHEMERAL: "false"
+    volumes:
+      - runner_work:/tmp/runner
+    security_opt:
+      - no-new-privileges:true
+
+  runner-26-04:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.github-runner-26.04
+    image: lingua-whatlang-github-runner:ubuntu-26.04
+    restart: unless-stopped
+    environment:
+      ACCESS_TOKEN: "${GH_ACCESS_TOKEN}"
+      REPO_URL: "https://github.com/jcbf/Lingua-Whatlang"
+      RUNNER_NAME: "lingua-whatlang-ubuntu-26.04"
+      RUNNER_WORKDIR: "/tmp/runner/work-26.04"
+      LABELS: "self-hosted,linux,x64,ubuntu-26.04"
+      RUNNER_GROUP: "Default"
+      EPHEMERAL: "false"
+    volumes:
+      - runner_work:/tmp/runner
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  runner_work:

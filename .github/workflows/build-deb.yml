@@ -12,26 +12,51 @@ jobs:
       fail-fast: false
       matrix:
         ubuntu: ["22.04", "24.04", "26.04"]
-    runs-on: [self-hosted, ubuntu-${{ matrix.ubuntu }}]
+    runs-on: ${{ fromJSON(format('["self-hosted", "ubuntu-{0}"]', matrix.ubuntu)) }}
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
-      - name: Install build dependencies
+      - name: Prepare runner disk
         run: |
-          apt-get update
-          apt-get install -y --no-install-recommends \
-            build-essential curl ca-certificates git \
-            perl dpkg-dev libperl-dev libffi-dev cpanminus
+          df -h / /tmp/runner 2>/dev/null || df -h
+          apt-get clean 2>/dev/null || true
+          rm -rf /var/cache/apt/archives/* 2>/dev/null || true
+          for wd in /tmp/runner/work-22.04 /tmp/runner/work-24.04 /tmp/runner/work-26.04; do
+            rm -rf \
+              "${wd}/_work" \
+              "${wd}/_tool" \
+              "${wd}/_temp/cargo" \
+              "${wd}/_temp/cargo-target" \
+              "${wd}/_temp/perl-local" \
+              "${wd}/_temp/apt-cache" 2>/dev/null || true
+          done
+          df -h / /tmp/runner 2>/dev/null || true
 
       - uses: actions/checkout@v7
 
       - name: Install Perl dependencies
-        run: cpanm --notest FFI::Platypus
-
-      - name: Install Rust toolchain
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          set -euo pipefail
+          APT_CACHE="${RUNNER_TEMP}/apt-cache"
+          mkdir -p "$APT_CACHE"
+
+          if ! command -v cpanm >/dev/null; then
+            curl -fsSL https://cpanmin.us -o /usr/local/bin/cpanm
+            chmod +x /usr/local/bin/cpanm
+          fi
+
+          if ! dpkg -s libperl-dev >/dev/null 2>&1; then
+            apt-get -o Dir::Cache::archives="$APT_CACHE" \
+              -o APT::Keep-Downloaded-Packages=false \
+              install -y --no-install-recommends libperl-dev
+          fi
+          rm -rf "$APT_CACHE"
+
+          if ! perl -MFFI::Platypus -e1 2>/dev/null; then
+            cpanm --notest FFI::Platypus
+          fi
+
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Build and test
         run: |
@@ -71,3 +96,9 @@ jobs:
         with:
           name: deb-ubuntu-${{ matrix.ubuntu }}
           path: '*.deb'
+
+      - name: Cleanup build artifacts
+        if: always()
+        run: |
+          rm -rf target pkgroot blib 2>/dev/null || true
+          rm -rf "${RUNNER_TEMP}/cargo" "${RUNNER_TEMP}/perl-local" "${RUNNER_TEMP}/apt-cache" 2>/dev/null || true
