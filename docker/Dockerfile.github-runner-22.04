@@ -1,11 +1,20 @@
-FROM myoung34/github-runner:ubuntu-jammy
+FROM ubuntu:22.04 AS deps
 
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libperl-dev \
+    && apt-get install -y --no-install-recommends \
+        perl libperl-dev libffi-dev curl ca-certificates build-essential \
     && curl -fsSL https://cpanmin.us -o /usr/local/bin/cpanm \
     && chmod +x /usr/local/bin/cpanm \
+    && cpanm --notest --local-lib=/opt/lingua-perl-deps FFI::Platypus \
     && apt-get clean \
     && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/*
+
+FROM myoung34/github-runner:ubuntu-jammy
+
+USER root
+COPY --from=deps /opt/lingua-perl-deps /opt/lingua-perl-deps
+COPY --from=deps /usr/local/bin/cpanm /usr/local/bin/cpanm
+ENV PERL5LIB=/opt/lingua-perl-deps/lib/perl5

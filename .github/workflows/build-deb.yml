@@ -15,11 +15,39 @@ jobs:
     runs-on: ${{ fromJSON(format('["self-hosted", "ubuntu-{0}"]', matrix.ubuntu)) }}
     env:
       DEBIAN_FRONTEND: noninteractive
+      CARGO_HOME: ${{ runner.temp }}/cargo
+      CARGO_TARGET_DIR: ${{ runner.temp }}/cargo-target
     steps:
+      - name: Prepare runner disk
+        run: |
+          df -h
+          apt-get clean 2>/dev/null || true
+          rm -rf /var/cache/apt/archives/* "${RUNNER_TEMP:?}"/* 2>/dev/null || true
+
       - uses: actions/checkout@v7
 
       - name: Install Perl dependencies
-        run: cpanm --notest FFI::Platypus
+        run: |
+          set -euo pipefail
+          PERL_LOCAL="${RUNNER_TEMP}/perl-local"
+          APT_CACHE="${RUNNER_TEMP}/apt-cache"
+          mkdir -p "$APT_CACHE"
+
+          if ! command -v cpanm >/dev/null; then
+            curl -fsSL https://cpanmin.us -o /usr/local/bin/cpanm
+            chmod +x /usr/local/bin/cpanm
+          fi
+
+          if ! dpkg -s libperl-dev >/dev/null 2>&1; then
+            apt-get -o Dir::Cache::archives="$APT_CACHE" \
+              -o APT::Keep-Downloaded-Packages=false \
+              install -y --no-install-recommends libperl-dev
+          fi
+          rm -rf "$APT_CACHE"
+
+          cpanm --notest --local-lib="$PERL_LOCAL" FFI::Platypus
+          echo "PERL5LIB=${PERL_LOCAL}/lib/perl5" >> "$GITHUB_ENV"
+          echo "${PERL_LOCAL}/bin" >> "$GITHUB_PATH"
 
       - name: Install Rust toolchain
         run: |
@@ -64,3 +92,7 @@ jobs:
         with:
           name: deb-ubuntu-${{ matrix.ubuntu }}
           path: '*.deb'
+
+      - name: Cleanup build artifacts
+        if: always()
+        run: rm -rf "${RUNNER_TEMP:?}"/* target pkgroot blib 2>/dev/null || true
