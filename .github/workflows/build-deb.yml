@@ -39,7 +39,6 @@ jobs:
       - name: Install Perl dependencies
         run: |
           set -euo pipefail
-          PERL_LOCAL="${RUNNER_TEMP}/perl-local"
           APT_CACHE="${RUNNER_TEMP}/apt-cache"
           mkdir -p "$APT_CACHE"
 
@@ -55,9 +54,9 @@ jobs:
           fi
           rm -rf "$APT_CACHE"
 
-          cpanm --notest --local-lib="$PERL_LOCAL" FFI::Platypus
-          echo "PERL5LIB=${PERL_LOCAL}/lib/perl5" >> "$GITHUB_ENV"
-          echo "${PERL_LOCAL}/bin" >> "$GITHUB_PATH"
+          if ! perl -MFFI::Platypus -e1 2>/dev/null; then
+            cpanm --notest FFI::Platypus
+          fi
 
       - uses: dtolnay/rust-toolchain@stable
 
