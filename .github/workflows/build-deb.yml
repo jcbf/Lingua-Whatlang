@@ -31,8 +31,6 @@ jobs:
               "${wd}/_temp/apt-cache" 2>/dev/null || true
           done
           df -h / /tmp/runner 2>/dev/null || true
-          mkdir -p "${RUNNER_TEMP}/cargo"
-          echo "CARGO_HOME=${RUNNER_TEMP}/cargo" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v7
 
