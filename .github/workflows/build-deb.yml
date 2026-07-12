@@ -18,9 +18,20 @@ jobs:
     steps:
       - name: Prepare runner disk
         run: |
-          df -h
+          df -h / /tmp/runner 2>/dev/null || df -h
           apt-get clean 2>/dev/null || true
-          rm -rf /var/cache/apt/archives/* "${RUNNER_TEMP:?}"/* 2>/dev/null || true
+          rm -rf /var/cache/apt/archives/* 2>/dev/null || true
+          for wd in /tmp/runner/work-22.04 /tmp/runner/work-24.04 /tmp/runner/work-26.04; do
+            rm -rf \
+              "${wd}/_work" \
+              "${wd}/_tool" \
+              "${wd}/_temp/cargo" \
+              "${wd}/_temp/cargo-target" \
+              "${wd}/_temp/perl-local" \
+              "${wd}/_temp/apt-cache" 2>/dev/null || true
+          done
+          df -h / /tmp/runner 2>/dev/null || true
+          mkdir -p "${RUNNER_TEMP}/cargo" "${RUNNER_TEMP}/cargo-target"
           echo "CARGO_HOME=${RUNNER_TEMP}/cargo" >> "$GITHUB_ENV"
           echo "CARGO_TARGET_DIR=${RUNNER_TEMP}/cargo-target" >> "$GITHUB_ENV"
 
