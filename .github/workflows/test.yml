@@ -9,12 +9,22 @@ on:
 jobs:
   build-and-test:
     runs-on: self-hosted
+    container:
+      image: ubuntu:22.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
 
     strategy:
       matrix:
         perl-version: [ '5.32', '5.36', '5.38', '5.40' ]
 
     steps:
+    - name: Install build dependencies
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends \
+          build-essential curl ca-certificates git libffi-dev
+
     - name: Checkout Code
       uses: actions/checkout@v4
 
