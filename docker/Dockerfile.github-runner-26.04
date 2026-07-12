@@ -1,0 +1,29 @@
+FROM ubuntu:26.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl jq tar ca-certificates dumb-init sudo libperl-dev \
+    && curl -fsSL https://cpanmin.us -o /usr/local/bin/cpanm \
+    && chmod +x /usr/local/bin/cpanm \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG GH_RUNNER_VERSION=2.335.1
+ARG TARGETARCH
+WORKDIR /actions-runner
+RUN RUNNER_ARCH="$([ "${TARGETARCH}" = "arm64" ] && echo arm64 || echo x64)" \
+    && curl -fsSL \
+        "https://github.com/actions/runner/releases/download/v${GH_RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${GH_RUNNER_VERSION}.tar.gz" \
+    | tar xz \
+    && ./bin/installdependencies.sh
+
+RUN curl -fsSL -o /entrypoint.sh \
+        https://raw.githubusercontent.com/myoung34/docker-github-actions-runner/master/entrypoint.sh \
+    && curl -fsSL -o /token.sh \
+        https://raw.githubusercontent.com/myoung34/docker-github-actions-runner/master/token.sh \
+    && chmod +x /entrypoint.sh /token.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["./bin/Runner.Listener", "run", "--startuptype", "service"]

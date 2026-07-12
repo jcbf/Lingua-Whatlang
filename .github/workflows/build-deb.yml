@@ -16,17 +16,6 @@ jobs:
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
-      - name: Install build dependencies
-        run: |
-          APT_CACHE="${RUNNER_TEMP}/apt-cache"
-          mkdir -p "$APT_CACHE"
-          apt-get clean
-          rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/*
-          apt-get update -qq
-          apt-get -o Dir::Cache::archives="$APT_CACHE" \
-            install -y --no-install-recommends libperl-dev cpanminus
-          rm -rf "$APT_CACHE" /var/lib/apt/lists/*
-
       - uses: actions/checkout@v7
 
       - name: Install Perl dependencies
