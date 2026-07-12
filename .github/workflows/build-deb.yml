@@ -15,14 +15,14 @@ jobs:
     runs-on: ${{ fromJSON(format('["self-hosted", "ubuntu-{0}"]', matrix.ubuntu)) }}
     env:
       DEBIAN_FRONTEND: noninteractive
-      CARGO_HOME: ${{ runner.temp }}/cargo
-      CARGO_TARGET_DIR: ${{ runner.temp }}/cargo-target
     steps:
       - name: Prepare runner disk
         run: |
           df -h
           apt-get clean 2>/dev/null || true
           rm -rf /var/cache/apt/archives/* "${RUNNER_TEMP:?}"/* 2>/dev/null || true
+          echo "CARGO_HOME=${RUNNER_TEMP}/cargo" >> "$GITHUB_ENV"
+          echo "CARGO_TARGET_DIR=${RUNNER_TEMP}/cargo-target" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v7
 
