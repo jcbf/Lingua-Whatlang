@@ -31,9 +31,8 @@ jobs:
               "${wd}/_temp/apt-cache" 2>/dev/null || true
           done
           df -h / /tmp/runner 2>/dev/null || true
-          mkdir -p "${RUNNER_TEMP}/cargo" "${RUNNER_TEMP}/cargo-target"
+          mkdir -p "${RUNNER_TEMP}/cargo"
           echo "CARGO_HOME=${RUNNER_TEMP}/cargo" >> "$GITHUB_ENV"
-          echo "CARGO_TARGET_DIR=${RUNNER_TEMP}/cargo-target" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v7
 
@@ -60,10 +59,7 @@ jobs:
           echo "PERL5LIB=${PERL_LOCAL}/lib/perl5" >> "$GITHUB_ENV"
           echo "${PERL_LOCAL}/bin" >> "$GITHUB_PATH"
 
-      - name: Install Rust toolchain
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Build and test
         run: |
@@ -106,4 +102,6 @@ jobs:
 
       - name: Cleanup build artifacts
         if: always()
-        run: rm -rf "${RUNNER_TEMP:?}"/* target pkgroot blib 2>/dev/null || true
+        run: |
+          rm -rf target pkgroot blib 2>/dev/null || true
+          rm -rf "${RUNNER_TEMP}/cargo" "${RUNNER_TEMP}/perl-local" "${RUNNER_TEMP}/apt-cache" 2>/dev/null || true
