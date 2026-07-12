@@ -1,0 +1,28 @@
+services:
+  runner:
+    image: myoung34/github-runner:ubuntu-jammy
+    restart: unless-stopped
+    environment:
+      # --- Fill these in before starting ---
+      ACCESS_TOKEN: "${GH_ACCESS_TOKEN}"
+      REPO_URL: "https://github.com/jcbf/Lingua-Whatlang"
+
+      # --- Runner identity ---
+      RUNNER_NAME: "self-hosted-lingua-whatlang"
+      RUNNER_WORKDIR: "/tmp/runner/work"
+      LABELS: "self-hosted,linux,x64"
+      RUNNER_GROUP: "Default"
+
+      # --- Ephemeral: runner deregisters after each job (recommended) ---
+      EPHEMERAL: "false"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock   # needed if jobs use docker
+      - runner_work:/tmp/runner
+
+    # Drop all capabilities; add back only what Cargo/make need
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  runner_work:

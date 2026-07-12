@@ -47,10 +47,13 @@ sub detect {
     # Guard against failure states
     return unless $result->success;
 
+    (my $lang = $result->lang_code) =~ s/\0.*\z//s;
+    (my $script = $result->script_name) =~ s/\0.*\z//s;
+
     # Return a high-level key/value hash mapping
     return {
-        lang       => $result->lang_code,
-        script     => $result->script_name,
+        lang       => $lang,
+        script     => $script,
         confidence => $result->confidence,
     };
 }

@@ -9,8 +9,6 @@ on:
 jobs:
   build-and-test:
     runs-on: self-hosted
-    container:
-      image: ubuntu:22.04
     env:
       DEBIAN_FRONTEND: noninteractive
 
