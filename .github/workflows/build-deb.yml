@@ -12,9 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         ubuntu: ["22.04", "24.04", "26.04"]
-    runs-on: self-hosted
-    container:
-      image: ubuntu:${{ matrix.ubuntu }}
+    runs-on: [self-hosted, ubuntu-${{ matrix.ubuntu }}]
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
@@ -23,9 +21,12 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends \
             build-essential curl ca-certificates git \
-            perl dpkg-dev libperl-dev
+            perl dpkg-dev libperl-dev libffi-dev cpanminus
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+
+      - name: Install Perl dependencies
+        run: cpanm --notest FFI::Platypus
 
       - name: Install Rust toolchain
         run: |
@@ -49,19 +50,19 @@ jobs:
           mkdir -p "$PKGROOT/DEBIAN"
 
           SIZE=$(du -sk "$PKGROOT" --exclude=DEBIAN | cut -f1)
-          cat > "$PKGROOT/DEBIAN/control" <<EOF
-          Package: liblingua-whatlang-perl
-          Version: ${VERSION}-ubuntu${{ matrix.ubuntu }}
-          Section: perl
-          Priority: optional
-          Architecture: ${ARCH}
-          Installed-Size: ${SIZE}
-          Depends: perl, libc6
-          Maintainer: jose.ferreira@anubisnetworks.com
-          Description: Fast natural language detection for Perl (Rust FFI backend)
-           Blazingly fast, lightweight language detection library for Perl,
-           providing FFI bindings to the Rust whatlang engine.
-          EOF
+          {
+            echo "Package: liblingua-whatlang-perl"
+            echo "Version: ${VERSION}-ubuntu${{ matrix.ubuntu }}"
+            echo "Section: perl"
+            echo "Priority: optional"
+            echo "Architecture: ${ARCH}"
+            echo "Installed-Size: ${SIZE}"
+            echo "Depends: perl, libc6"
+            echo "Maintainer: jose.ferreira@anubisnetworks.com"
+            echo "Description: Fast natural language detection for Perl (Rust FFI backend)"
+            echo " Blazingly fast, lightweight language detection library for Perl,"
+            echo " providing FFI bindings to the Rust whatlang engine."
+          } > "$PKGROOT/DEBIAN/control"
 
           dpkg-deb --root-owner-group --build "$PKGROOT" \
             "liblingua-whatlang-perl_${VERSION}_ubuntu${{ matrix.ubuntu }}_${ARCH}.deb"
