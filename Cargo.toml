@@ -8,4 +8,4 @@ name = "lingua_whatlang_ffi"
 crate-type = ["cdylib"]
 
 [dependencies]
-whatlang = "0.16.4"
+whatlang = "0.18.0"
